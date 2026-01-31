@@ -43,7 +43,7 @@ This project is built with a Laravel API backend and a React frontend using Vite
 ### Installation
 
 ```bash
-git clone https://github.com/brianrhackett83/jobtrackr.git
+git clone https://github.com/brianrhackett/jobtrackr.git
 cd jobtrackr
 composer install
 npm install
