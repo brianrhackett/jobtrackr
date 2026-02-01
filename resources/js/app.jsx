@@ -1,5 +1,8 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
+import AppMain from "./AppMain";
+import { AuthProvider } from "./context/AuthContext";
+
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
@@ -14,3 +17,15 @@ function App() {
 
 const root = createRoot(document.getElementById('app'))
 root.render(<App />)
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <AuthProvider>
+    <App />
+  </AuthProvider>
+);
+
+createRoot(document.getElementById("app")).render(
+  <AuthProvider>
+    <AppMain />
+  </AuthProvider>
+);
