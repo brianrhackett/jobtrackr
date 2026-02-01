@@ -1,31 +1,19 @@
-import React from 'react'
-import { createRoot } from 'react-dom/client'
-import AppMain from "./AppMain";
+import "./bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css"; // Bootstrap CSS
+import "bootstrap/dist/js/bootstrap.bundle.min.js"; // Bootstrap JS (dropdowns, etc.) optional but usually fine
+
+import { createRoot } from "react-dom/client";
+import AppMain from "./AppMain"; // router component
 import { AuthProvider } from "./context/AuthContext";
 
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+const el = document.getElementById("app");
 
-function App() {
-  return (
-    <div className="container py-5">
-      <h1 className="text-primary">JobTrackr</h1>
-      <p className="lead">Track your applications and schedule follow-ups.</p>
-    </div>
-  )
+if (el) {
+	createRoot(el).render(
+		<React.StrictMode>
+			<AuthProvider>
+				<AppMain />
+			</AuthProvider>
+		</React.StrictMode>
+	);
 }
-
-const root = createRoot(document.getElementById('app'))
-root.render(<App />)
-
-ReactDOM.createRoot(document.getElementById("root")).render(
-  <AuthProvider>
-    <App />
-  </AuthProvider>
-);
-
-createRoot(document.getElementById("app")).render(
-  <AuthProvider>
-    <AppMain />
-  </AuthProvider>
-);
