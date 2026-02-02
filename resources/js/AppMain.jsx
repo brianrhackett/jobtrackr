@@ -5,23 +5,44 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute from "./components/GuestRoute";
 
-function App() {
+function AppMain() {
   const { user } = useAuth();
 
   return (
     <BrowserRouter>
       <Routes>
+        {/* Root */}
         <Route
           path="/"
           element={
-            user ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
+            <GuestRoute>
+              <Navigate to="/login" replace />
+            </GuestRoute>
           }
         />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Guest-only routes */}
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          }
+        />
 
+        <Route
+          path="/register"
+          element={
+            <GuestRoute>
+              <Register />
+            </GuestRoute>
+          }
+        />
+
+        {/* Protected routes */}
         <Route
           path="/dashboard"
           element={
@@ -35,4 +56,4 @@ function App() {
   );
 }
 
-export default App;
+export default AppMain;

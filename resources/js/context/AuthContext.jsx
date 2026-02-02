@@ -6,16 +6,25 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const getCookie = (name) => {
+	const match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]*)"));
+	return match ? match[2] : null;
+  };
   // Always include cookies
   const fetchWithCredentials = (url, options = {}) => {
-    return fetch(url, {
-      ...options,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(options.headers || {}),
-      },
-    });
+	const xsrf = getCookie("XSRF-TOKEN"); // set by /sanctum/csrf-cookie
+
+	return fetch(url, {
+	  ...options,
+	  credentials: "include",
+	  headers: {
+	    Accept: "application/json",
+		"Content-Type": "application/json",
+		"X-Requested-With": "XMLHttpRequest",
+		...(xsrf ? { "X-XSRF-TOKEN": decodeURIComponent(xsrf) } : {}),
+		...(options.headers || {}),
+	  },
+	});
   };
 
   // Get logged-in user

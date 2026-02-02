@@ -5,7 +5,7 @@ const Dashboard = () => {
 
   return (
     <div className="container mt-5">
-      <h2>Welcome, {user?.name} 👋</h2>
+      <h2>Welcome, {user?.name}</h2>
 
       <button className="btn btn-outline-danger mt-3" onClick={logout}>
         Logout

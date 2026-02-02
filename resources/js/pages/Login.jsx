@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-
+import { Link } from "react-router-dom";
 const Login = () => {
   const { login } = useAuth();
 
@@ -75,7 +75,11 @@ const Login = () => {
           {loading ? "Logging in..." : "Login"}
         </button>
       </form>
-    </div>
+
+	  <Link to="/register" className="btn btn-outline-secondary w-100 mt-4">
+		Create an Account
+	  </Link>
+	</div>
   );
 };
 
