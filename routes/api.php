@@ -13,15 +13,10 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['web'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/me', fn () => auth()->user());
+    Route::get('/me', [AuthController::class, 'me'])->middleware('auth:sanctum');
 });
 
-/*
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('job-applications', \App\Http\Controllers\Api\JobApplicationController::class);
-});
-*/
+
 Route::get('/statuses', [ApplicationStatusController::class, 'index']);
-//Route::middleware('auth:sanctum')->get('/statuses', [ApplicationStatusController::class, 'index']);
