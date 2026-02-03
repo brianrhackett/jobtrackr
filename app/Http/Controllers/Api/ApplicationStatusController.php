@@ -4,17 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApplicationStatus;
-use Illuminate\Http\JsonResponse;
 
 class ApplicationStatusController extends Controller
 {
-    /**
-     * Return all application statuses.
-     */
-    public function index(): JsonResponse
+    public function index()
     {
-        $statuses = ApplicationStatus::orderBy('sort_order')->get();
-
-        return response()->json($statuses);
+        // Adjust column names here if your status table uses different ones
+        return response()->json(
+            ApplicationStatus::query()
+                ->select(['id', 'name'])   // if your column is called something else, change it
+                ->orderBy('id')
+                ->get()
+        );
     }
 }
