@@ -1,6 +1,7 @@
 import React from "react";
 
 export default function AddJobModal({
+	modalRef,
 	modalId = "addJobModal",
 	title = "Add Job Application",
 
@@ -19,7 +20,8 @@ export default function AddJobModal({
 	return (
 		<div
 			className="modal fade"
-			id="{modalId}"
+			ref={modalRef}
+			id={modalId}
 			tabIndex="-1"
 			aria-labelledby={`${modalId}Label`}
 			aria-hidden="true"

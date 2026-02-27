@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import { Modal } from "bootstrap";
 import { csrf, api } from "../lib/api";
 import DashboardHeader from "../components/DashboardHeader";
 import AddJobModal from "../components/AddJobModal";
@@ -19,6 +20,9 @@ export default function Dashboard() {
 		applied_at: "",
 		notes: "",
 	});
+	
+	const addModalRef = useRef(null);
+	const ADD_MODAL_TARGET = "#addJobModal";
 
 	const [errors, setErrors] = useState({});
 	const [isSaving, setIsSaving] = useState(false);
@@ -57,6 +61,14 @@ export default function Dashboard() {
 		setErrors(next);
 		return Object.keys(next).length === 0;
 	};
+	
+	function closeAddModal() {
+		const el = addModalRef.current;
+		if (!el) return;
+
+		const instance = Modal.getOrCreateInstance(el);
+		instance.hide();
+	}
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
@@ -86,14 +98,14 @@ export default function Dashboard() {
 			// add the created record returned by Laravel
 			setJobs((prev) => [created, ...prev]);
 
-			// close modal
-			const modalEl = document.getElementById("addJobModal");
-			if (modalEl) {
-				const modal = window.bootstrap?.Modal.getInstance(modalEl);
-				modal?.hide();
-			}
-
 			resetForm();
+			closeAddModal();
+			// close modal
+			if (addModalRef.current) {
+				const modalInstance = Modal.getInstance(addModalRef.current);
+				modalInstance?.hide();
+			}
+			
 		} catch (err) {
 			console.error("Create application failed:", err);
 
@@ -112,6 +124,20 @@ export default function Dashboard() {
 		}
 	};
 
+	useEffect(() => {
+		const el = addModalRef.current;
+		if (!el) return;
+
+		const onHidden = () => {
+			// Safety cleanup (covers the stuck backdrop case)
+			document.body.classList.remove("modal-open");
+			document.body.style.removeProperty("padding-right");
+			document.querySelectorAll(".modal-backdrop").forEach((b) => b.remove());
+		};
+
+		el.addEventListener("hidden.bs.modal", onHidden);
+		return () => el.removeEventListener("hidden.bs.modal", onHidden);
+	}, []);
 	
 	useEffect(() => {
 		const loadStatuses = async () => {
@@ -178,14 +204,14 @@ export default function Dashboard() {
 			{/* Header */}
 			<DashboardHeader
 				onAddClick={resetForm}
-				addModalTarget="#addJobModal"
+				addModalTarget={ADD_MODAL_TARGET}
 			/>
 
 			{/* List */}
 			<JobsCard
 				jobsLoading={jobsLoading}
 				jobs={jobs}
-				addModalTarget="#addJobModal"
+				addModalTarget={ADD_MODAL_TARGET}
 				addButtonText="Add your first job"
 				onAddJobClick={resetForm}
 				statusNameById={statusNameById}
@@ -194,6 +220,8 @@ export default function Dashboard() {
 
 			{/* Modal */}
 			<AddJobModal
+				modalRef={addModalRef}
+				modalId={ADD_MODAL_TARGET.replace("#", "")}
 				form={form}
 				errors={errors}
 				statuses={statuses}
