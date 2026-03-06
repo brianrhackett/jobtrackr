@@ -50,12 +50,13 @@ class JobApplicationController extends Controller
         $this->authorizeOwner($request, $jobApplication);
 
         $validated = $request->validate([
-            'company' => ['sometimes', 'required', 'string', 'max:255'],
-            'title'   => ['sometimes', 'required', 'string', 'max:255'],
-            'status'  => ['sometimes', 'required', 'string', 'max:50'],
-            'url'     => ['nullable', 'string', 'max:2048'],
+            'company_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'job_title'   => ['sometimes', 'required', 'string', 'max:255'],
+            'status_id'  => ['sometimes', 'required', 'integer', 'max:50'],
+            'job_url'     => ['nullable', 'string', 'max:2048'],
+			'location'   => ['nullable', 'string', 'max:255'],
+			'applied_at' => ['nullable', 'date'],
             'notes'   => ['nullable', 'string'],
-            'applied_at' => ['nullable', 'date'],
         ]);
 
         $jobApplication->update($validated);

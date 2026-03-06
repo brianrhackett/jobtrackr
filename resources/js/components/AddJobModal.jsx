@@ -16,6 +16,7 @@ export default function AddJobModal({
 	onChange,
 	onSubmit,
 	onReset,
+	editingJobId,
 }) {
 	return (
 		<div
@@ -166,7 +167,7 @@ export default function AddJobModal({
 								className="btn btn-primary"
 								disabled={!canSubmit || isSaving}
 							>
-								{isSaving ? "Saving..." : "Add Job"}
+								{isSaving ? "Saving..." : editingJobId ? "Save Changes" : "Add Job"}
 							</button>
 						</div>
 					</form>

@@ -16,8 +16,6 @@ export default function DashboardHeader({
 
 			<button
 				className="btn btn-primary"
-				data-bs-toggle="modal"
-				data-bs-target={addModalTarget}
 				onClick={onAddClick}
 			>
 				{addButtonText}

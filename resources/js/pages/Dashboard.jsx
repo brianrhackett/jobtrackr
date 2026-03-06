@@ -5,49 +5,45 @@ import DashboardHeader from "../components/DashboardHeader";
 import AddJobModal from "../components/AddJobModal";
 import JobsCard from "../components/JobsCard";
 
+const INITIAL_FORM = {
+	company_name: "",
+	job_title: "",
+	status_id: "",
+	job_url: "",
+	location: "",
+	salary_range: "",
+	applied_at: "",
+	notes: "",
+};
+
 export default function Dashboard() {
 	const [jobs, setJobs] = useState([]);
 	const [jobsLoading, setJobsLoading] = useState(true);
 	const [statuses, setStatuses] = useState([]);
 	const [statusesLoading, setStatusesLoading] = useState(true);
-	const [form, setForm] = useState({
-		company_name: "",
-		job_title: "",
-		status_id: 1,
-		job_url: "",
-		location: "",
-		salary_range: "",
-		applied_at: "",
-		notes: "",
-	});
-	
+	const [form, setForm] = useState(INITIAL_FORM);
 	const addModalRef = useRef(null);
 	const ADD_MODAL_TARGET = "#addJobModal";
-
 	const [errors, setErrors] = useState({});
 	const [isSaving, setIsSaving] = useState(false);
-
+	const [editingJobId, setEditingJobId] = useState(null);
+	
 	const canSubmit = useMemo(() => {
 		return form.company_name.trim() && form.job_title.trim() && form.status_id;
 	}, [form]);
 
 	const resetForm = () => {
-		setForm({
-			company_name: "",
-			job_title: "",
-			status_id: 1,
-			job_url: "",
-			location: "",
-			salary_range: "",
-			applied_at: "",
-			notes: "",
-		});
+		setEditingJobId(null);
 		setErrors({});
-		setIsSaving(false);
+		setForm({
+			...INITIAL_FORM,
+			status_id: statuses.length ? String(statuses[0].id) : "",
+		});
 	};
 
 	const onChange = (e) => {
 		const { name, value } = e.target;
+		console.log("changing field:", name, value);
 		setForm((prev) => ({ ...prev, [name]: value }));
 	};
 
@@ -61,6 +57,25 @@ export default function Dashboard() {
 		setErrors(next);
 		return Object.keys(next).length === 0;
 	};
+	function openAddModal() {
+		resetForm();
+
+		const el = addModalRef.current;
+		if (!el) return;
+
+		const instance = Modal.getOrCreateInstance(el);
+		instance.show();
+	}
+
+	function openEditModal(job) {
+		handleEdit(job);
+
+		const el = addModalRef.current;
+		if (!el) return;
+
+		const instance = Modal.getOrCreateInstance(el);
+		instance.show();
+	}
 	
 	function closeAddModal() {
 		const el = addModalRef.current;
@@ -70,74 +85,92 @@ export default function Dashboard() {
 		instance.hide();
 	}
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		if (!validate()) return;
+	function handleEdit(job) {
+		setEditingJobId(job.id);
+		setErrors({}); // or however you reset errors
 
-		setIsSaving(true);
+		setForm({
+			company_name: job.company_name ?? "",
+			job_title: job.job_title ?? "",
+			status_id: String(job.status_id ?? ""),
+			job_url: job.job_url ?? "",
+			location: job.location ?? "",
+			salary_range: job.salary_range ?? "",
+			applied_at: job.applied_at ? String(job.applied_at).slice(0, 10) : "",
+			notes: job.notes ?? "",
+		});
+	}
+	
+	async function handleDelete(job) {
+		const ok = window.confirm(`Delete ${job.company_name} - ${job.job_title}?`);
+		if (!ok) return;
 
 		try {
-			await csrf(); // ✅ prevent 419
-
-			const payload = {
-				company_name: form.company_name.trim(),
-				job_title: form.job_title.trim(),
-				status_id: Number(form.status_id), // send as int
-				job_url: form.job_url.trim() || null,
-				location: form.location.trim() || null,
-				salary_range: form.salary_range.trim() || null,
-				applied_at: form.applied_at || null,
-				notes: form.notes.trim() || null,
-			};
-
-			const created = await api("/api/applications", {
-				method: "POST",
-				body: JSON.stringify(payload),
+			// adjust endpoint to match your API
+			await api(`/api/applications/${job.id}`, {
+				method: "DELETE",
 			});
+			await fetchJobs();
+		} catch (err) {
+			console.error(err);
+			alert("Failed to delete job. Please try again.");
+		}
+	}
 
-			// add the created record returned by Laravel
-			setJobs((prev) => [created, ...prev]);
+	async function handleSubmit(e) {
+		e.preventDefault();
+		setErrors({});
 
-			resetForm();
-			closeAddModal();
-			// close modal
-			if (addModalRef.current) {
-				const modalInstance = Modal.getInstance(addModalRef.current);
-				modalInstance?.hide();
+		try {
+			setIsSaving(true);
+
+			if (editingJobId) {
+				await api(`/api/applications/${editingJobId}`, {
+					method: "PUT",
+					body: JSON.stringify(form),
+				});
+			} else {
+				await api("/api/applications", {
+					method: "POST",
+					body: JSON.stringify(form),
+				});
 			}
 			
+			await fetchJobs();
+			closeAddModal();
 		} catch (err) {
-			console.error("Create application failed:", err);
-
-			// Laravel validation errors come back as: { message, errors: {field: [msg]} }
-			if (err?.errors) {
-				const next = {};
-				Object.entries(err.errors).forEach(([field, messages]) => {
-					next[field] = messages?.[0] || "Invalid";
-				});
-				setErrors(next);
+			console.error(err);
+			if (err.response?.status === 422) {
+				setErrors(err.response.data.errors || {});
 			} else {
-				setErrors({ general: err?.message || "Failed to create application" });
+				setErrors({
+					general: "Something went wrong. Please try again.",
+				});
 			}
 		} finally {
 			setIsSaving(false);
 		}
-	};
+	}
 
 	useEffect(() => {
 		const el = addModalRef.current;
 		if (!el) return;
 
 		const onHidden = () => {
-			// Safety cleanup (covers the stuck backdrop case)
-			document.body.classList.remove("modal-open");
-			document.body.style.removeProperty("padding-right");
-			document.querySelectorAll(".modal-backdrop").forEach((b) => b.remove());
+			setErrors({});
+			setEditingJobId(null);
+			setForm({
+				...INITIAL_FORM,
+				status_id: statuses.length ? String(statuses[0].id) : "",
+			});
 		};
 
 		el.addEventListener("hidden.bs.modal", onHidden);
-		return () => el.removeEventListener("hidden.bs.modal", onHidden);
-	}, []);
+
+		return () => {
+			el.removeEventListener("hidden.bs.modal", onHidden);
+		};
+	}, [statuses]);
 	
 	useEffect(() => {
 		const loadStatuses = async () => {
@@ -167,19 +200,20 @@ export default function Dashboard() {
 		loadStatuses();
 	}, []);
 	
-	useEffect(() => {
-		const loadJobs = async () => {
-			try {
-				const data = await api("/api/applications", { method: "GET" });
-				setJobs(data);
-			} catch (e) {
-				console.error("Failed to load applications", e);
-			} finally {
-				setJobsLoading(false);
-			}
-		};
+	const fetchJobs = async () => {
+		try {
+			setJobsLoading(true);
+			const data = await api("/api/applications", { method: "GET" });
+			setJobs(data);
+		} catch (e) {
+			console.error("Failed to load applications", e);
+		} finally {
+			setJobsLoading(false);
+		}
+	};
 
-		loadJobs();
+	useEffect(() => {
+		fetchJobs();
 	}, []);
 	
 	const statusNameById = useMemo(() => {
@@ -203,8 +237,7 @@ export default function Dashboard() {
 			
 			{/* Header */}
 			<DashboardHeader
-				onAddClick={resetForm}
-				addModalTarget={ADD_MODAL_TARGET}
+				onAddClick={openAddModal}
 			/>
 
 			{/* List */}
@@ -212,10 +245,11 @@ export default function Dashboard() {
 				jobsLoading={jobsLoading}
 				jobs={jobs}
 				addModalTarget={ADD_MODAL_TARGET}
-				addButtonText="Add your first job"
 				onAddJobClick={resetForm}
 				statusNameById={statusNameById}
 				STATUS_BADGE_CLASS={STATUS_BADGE_CLASS}
+				onEdit={openEditModal}
+				onDelete={handleDelete}
 			/>
 
 			{/* Modal */}
@@ -231,6 +265,7 @@ export default function Dashboard() {
 				onChange={onChange}
 				onSubmit={handleSubmit}
 				onReset={resetForm}
+				editingJobId={editingJobId}
 			/>
 		</div>
 	);
